@@ -42,6 +42,44 @@ fn part_one(lines: &str) -> usize {
     result
 }
 
+fn part_two(lines: &str) -> i32 {
+    let mut result = 0;
+
+    for line in lines.lines() {
+        let parts = line.split(':').collect::<Vec<&str>>();
+        let data = match parts.get(1) {
+            Some(data) => data,
+            None => panic!(),
+        };
+
+        let mut red_max = 0;
+        let mut green_max = 0;
+        let mut blue_max = 0;
+        for showing in data.split(';') {
+            for color_data in showing.trim().split(',') {
+                match color_data.trim().split_once(' ') {
+                    Some((number_str, color)) => {
+                        let num = match number_str.parse::<i32>() {
+                            Ok(num) => num,
+                            Err(_) => panic!("couldn't parse integer from {}", number_str),
+                        };
+                        match color {
+                            "red" => red_max = red_max.max(num),
+                            "green" => green_max = green_max.max(num),
+                            "blue" => blue_max = blue_max.max(num),
+                            _ => {}
+                        }
+                    }
+                    None => (),
+                }
+            }
+        }
+        result += red_max * green_max * blue_max;
+    }
+
+    result
+}
+
 fn main() {
     let path = Path::new("input.txt");
     let display = path.display();
@@ -58,4 +96,5 @@ fn main() {
     }
 
     println!("{}", part_one(&lines));
+    println!("{}", part_two(&lines));
 }
