@@ -70,7 +70,101 @@ fn part_one(lines: &str) -> i32 {
         }
         res
     });
-    println!("{:?}", weights);
+    weights
+        .iter()
+        .enumerate()
+        .fold(0, |acc, (rank, &(_, _, bid))| acc + (rank as i32 + 1) * bid)
+}
+
+fn part_two(lines: &str) -> i32 {
+    let mut weights: Vec<(i32, &str, i32)> = vec![];
+    for line in lines.lines() {
+        let (hand, bid) = match line.split_once(' ') {
+            Some((l, r)) => (
+                l.trim(),
+                match r.parse::<i32>() {
+                    Ok(bid) => bid,
+                    Err(why) => panic!("could not parse {}: {}", r, why),
+                },
+            ),
+            None => panic!("invalid input"),
+        };
+        let map = create_frequency_map(hand);
+        let counts: Vec<_> = map.values().map(|x| *x).collect();
+        let joker = map.get(&'J');
+        let score = match map.len() {
+            1 => 7, // Five of a kind
+            2 => {
+                if counts.contains(&4) {
+                    // Four of a kind
+                    match joker {
+                        Some(_) => 7, // Five of a kind
+                        None => 6,
+                    }
+                } else {
+                    // Full house
+                    match joker {
+                        Some(_) => 7, // Five of a kind
+                        None => 5,
+                    }
+                }
+            }
+            3 => {
+                if counts.iter().filter(|&x| *x == 2).count() == 2 {
+                    // Two pair
+                    match joker {
+                        Some(&count) => match count {
+                            1 => 5, // Full house
+                            2 => 6, // Four of a kind
+                            _ => panic!("not possible"),
+                        },
+                        None => 3,
+                    }
+                } else {
+                    // Three of a kind
+                    match joker {
+                        Some(&count) => match count {
+                            1 => 6, // Four of a kind
+                            3 => 6, // Four of a kind
+                            _ => panic!("not possible"),
+                        },
+                        None => 4,
+                    }
+                }
+            }
+            4 => match joker {
+                // One pair
+                Some(_) => 4, // Three of a kind
+                None => 2,
+            },
+            5 => match joker {
+                // High card
+                Some(_) => 2, // One pair
+                None => 1,
+            },
+            _ => panic!("can't have more than 5 cards in a hand"),
+        };
+        weights.push((score, hand, bid));
+    }
+
+    let order = "AKQT98765432J";
+    weights.sort_unstable_by(|&(w1, s1, _), &(w2, s2, _)| {
+        let mut res = w1.cmp(&w2);
+        if res == std::cmp::Ordering::Equal {
+            for (c1, c2) in s1.chars().zip(s2.chars()) {
+                let idx1 = order.find(c1).unwrap();
+                let idx2 = order.find(c2).unwrap();
+                if idx1 < idx2 {
+                    res = std::cmp::Ordering::Greater;
+                    break;
+                } else if idx1 > idx2 {
+                    res = std::cmp::Ordering::Less;
+                    break;
+                }
+            }
+        }
+        res
+    });
     weights
         .iter()
         .enumerate()
@@ -93,4 +187,5 @@ fn main() {
     }
 
     println!("{}", part_one(&lines));
+    println!("{}", part_two(&lines));
 }
