@@ -84,6 +84,84 @@ fn part_one(lines: &str) -> i32 {
     path.len() as i32 / 2
 }
 
+fn part_two(lines: &str) -> i32 {
+    let mut grid = string_to_grid(lines);
+
+    let start = find_start(&grid).expect("couldn't find S in grid");
+    let mut path: BTreeSet<(usize, usize)> = BTreeSet::new();
+    let mut deq: VecDeque<(usize, usize)> = VecDeque::new();
+    path.insert(start);
+    deq.push_back(start);
+
+    while !deq.is_empty() {
+        let (x, y) = deq.pop_front().expect("deque shouldn't be empty");
+        if "S|JL".contains(grid[x][y])
+            && "|7F".contains(grid[x - 1][y])
+            && !path.contains(&(x - 1, y))
+        {
+            path.insert((x - 1, y));
+            deq.push_back((x - 1, y));
+        }
+
+        if "S|7F".contains(grid[x][y])
+            && "|JL".contains(grid[x + 1][y])
+            && !path.contains(&(x + 1, y))
+        {
+            path.insert((x + 1, y));
+            deq.push_back((x + 1, y));
+        }
+
+        if "S-J7".contains(grid[x][y])
+            && "-LF".contains(grid[x][y - 1])
+            && !path.contains(&(x, y - 1))
+        {
+            path.insert((x, y - 1));
+            deq.push_back((x, y - 1));
+        }
+
+        if "S-LF".contains(grid[x][y])
+            && "-J7".contains(grid[x][y + 1])
+            && !path.contains(&(x, y + 1))
+        {
+            path.insert((x, y + 1));
+            deq.push_back((x, y + 1));
+        }
+    }
+
+    grid[start.0][start.1] = '-';
+    for x in 0..grid.len() {
+        for y in 0..grid[0].len() {
+            if !path.contains(&(x, y)) {
+                grid[x][y] = '.';
+            }
+        }
+    }
+
+    let mut outside_set: BTreeSet<(usize, usize)> = BTreeSet::new();
+    let mut is_outside = true;
+    for (x, row) in grid.iter().enumerate() {
+        let mut dir_flag = false;
+        for (y, &c) in row.iter().enumerate() {
+            match c {
+                '|' => is_outside = !is_outside,
+                'L' | 'F' => dir_flag = c == 'L',
+                '7' | 'J' => {
+                    if c != if dir_flag { 'J' } else { '7' } {
+                        is_outside = !is_outside;
+                    }
+                    dir_flag = false;
+                }
+                _ => {}
+            }
+
+            if is_outside {
+                outside_set.insert((x, y));
+            }
+        }
+    }
+    (grid.len() * grid[0].len() - outside_set.union(&path).collect::<BTreeSet<_>>().len()) as i32
+}
+
 fn main() {
     let path = Path::new("input.txt");
     let display = path.display();
@@ -100,4 +178,5 @@ fn main() {
     }
 
     println!("{}", part_one(&lines));
+    println!("{}", part_two(&lines));
 }
