@@ -76,10 +76,10 @@ fn count_differences(above_grid: &Vec<Vec<char>>, below_grid: &Vec<Vec<char>>) -
     differences
 }
 
-fn reflections(grid: &Vec<Vec<char>>) -> i32 {
+fn reflections(grid: &Vec<Vec<char>>, expected_differences: i32) -> i32 {
     for i in 0..(grid.len() - 1) {
         let (above_grid, below_grid) = split_grid(grid, i);
-        if count_differences(&above_grid, &below_grid) == 0 {
+        if count_differences(&above_grid, &below_grid) == expected_differences {
             return i as i32 + 1;
         }
     }
@@ -91,8 +91,19 @@ fn part_one(lines: &str) -> i32 {
     let mut cols = 0;
     let mut rows = 0;
     for grid in grids {
-        rows += reflections(&grid);
-        cols += reflections(&transpose_grid(grid));
+        rows += reflections(&grid, 0);
+        cols += reflections(&transpose_grid(grid), 0);
+    }
+    cols + 100 * rows
+}
+
+fn part_two(lines: &str) -> i32 {
+    let grids: Vec<_> = lines.split("\n\n").map(string_to_grid).collect();
+    let mut cols = 0;
+    let mut rows = 0;
+    for grid in grids {
+        rows += reflections(&grid, 1);
+        cols += reflections(&transpose_grid(grid), 1);
     }
     cols + 100 * rows
 }
@@ -113,4 +124,5 @@ fn main() {
     }
 
     println!("{}", part_one(&lines));
+    println!("{}", part_two(&lines));
 }
