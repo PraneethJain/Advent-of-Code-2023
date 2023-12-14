@@ -73,6 +73,105 @@ fn part_one(lines: &str) -> usize {
     })
 }
 
+fn north_roll(grid: &Vec<Vec<char>>) -> Vec<Vec<char>> {
+    transpose_grid(
+        &transpose_grid(&grid)
+            .iter()
+            .map(|vec| {
+                vec.split(|&c| c == '#')
+                    .map(|part| {
+                        let mut part_vec = part.to_vec();
+                        part_vec.sort_unstable();
+                        part_vec.iter().rev().collect()
+                    })
+                    .collect::<Vec<String>>()
+                    .join("#")
+                    .chars()
+                    .collect::<Vec<char>>()
+            })
+            .collect::<Vec<_>>(),
+    )
+}
+
+fn east_roll(grid: &Vec<Vec<char>>) -> Vec<Vec<char>> {
+    grid.iter()
+        .map(|vec| {
+            vec.split(|&c| c == '#')
+                .map(|part| {
+                    let mut part_vec = part.to_vec();
+                    part_vec.sort_unstable();
+                    part_vec.iter().collect()
+                })
+                .collect::<Vec<String>>()
+                .join("#")
+                .chars()
+                .collect::<Vec<char>>()
+        })
+        .collect::<Vec<_>>()
+}
+
+fn south_roll(grid: &Vec<Vec<char>>) -> Vec<Vec<char>> {
+    transpose_grid(
+        &transpose_grid(&grid)
+            .iter()
+            .map(|vec| {
+                vec.split(|&c| c == '#')
+                    .map(|part| {
+                        let mut part_vec = part.to_vec();
+                        part_vec.sort_unstable();
+                        part_vec.iter().collect()
+                    })
+                    .collect::<Vec<String>>()
+                    .join("#")
+                    .chars()
+                    .collect::<Vec<char>>()
+            })
+            .collect::<Vec<_>>(),
+    )
+}
+
+fn west_roll(grid: &Vec<Vec<char>>) -> Vec<Vec<char>> {
+    grid.iter()
+        .map(|vec| {
+            vec.split(|&c| c == '#')
+                .map(|part| {
+                    let mut part_vec = part.to_vec();
+                    part_vec.sort_unstable();
+                    part_vec.iter().rev().collect()
+                })
+                .collect::<Vec<String>>()
+                .join("#")
+                .chars()
+                .collect::<Vec<char>>()
+        })
+        .collect::<Vec<_>>()
+}
+
+fn part_two(lines: &str) -> usize {
+    let grid = string_to_grid(lines);
+    let mut cur = grid.clone();
+    let mut seen = vec![cur.clone()];
+    loop {
+        cur = north_roll(&cur);
+        cur = west_roll(&cur);
+        cur = south_roll(&cur);
+        cur = east_roll(&cur);
+
+        if seen.contains(&cur) {
+            break;
+        } else {
+            seen.push(cur.clone());
+        }
+    }
+    let idx = seen.iter().position(|x| x == &cur).unwrap();
+    seen[idx + (1000000000 - idx) % (seen.len() - idx)]
+        .iter()
+        .enumerate()
+        .fold(0, |acc, (idx, row)| {
+            acc + row.iter().filter(|&&x| x == 'O').count() * (cur.len() - idx)
+        })
+}
+
 fn main() {
     let path = Path::new("input.txt");
     let display = path.display();
@@ -89,4 +188,5 @@ fn main() {
     }
 
     println!("{}", part_one(&lines));
+    println!("{}", part_two(&lines));
 }
