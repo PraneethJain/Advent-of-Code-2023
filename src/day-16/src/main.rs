@@ -37,7 +37,6 @@ struct Ray {
 
 fn part_one(lines: &str) -> usize {
     let grid = string_to_grid(lines);
-    print_grid(&grid);
     let mut q: VecDeque<Ray> = VecDeque::new();
     let mut seen: BTreeSet<Ray> = BTreeSet::new();
     let start = Ray {
@@ -122,6 +121,132 @@ fn part_one(lines: &str) -> usize {
     energized.iter().count()
 }
 
+fn energized_count(grid: &Vec<Vec<char>>, start: Ray) -> usize {
+    let mut q: VecDeque<Ray> = VecDeque::new();
+    let mut seen: BTreeSet<Ray> = BTreeSet::new();
+    q.push_back(start.clone());
+
+    while !q.is_empty() {
+        let mut ray = q.pop_front().expect("q is empty");
+        ray.x += ray.dx;
+        ray.y += ray.dy;
+
+        if ray.x < 0 || ray.x >= grid.len() as i32 || ray.y < 0 || ray.y >= grid[0].len() as i32 {
+            continue;
+        }
+
+        match grid[ray.x as usize][ray.y as usize] {
+            '.' => {
+                if seen.insert(ray.clone()) {
+                    q.push_back(ray.clone());
+                }
+            }
+            '-' => match ray.dy != 0 {
+                true => {
+                    if seen.insert(ray.clone()) {
+                        q.push_back(ray.clone());
+                    }
+                }
+                false => {
+                    ray.dx = 0;
+                    ray.dy = 1;
+                    if seen.insert(ray.clone()) {
+                        q.push_back(ray.clone());
+                    }
+                    ray.dy = -1;
+                    if seen.insert(ray.clone()) {
+                        q.push_back(ray.clone());
+                    }
+                }
+            },
+            '|' => match ray.dx != 0 {
+                true => {
+                    if seen.insert(ray.clone()) {
+                        q.push_back(ray.clone());
+                    }
+                }
+                false => {
+                    ray.dy = 0;
+                    ray.dx = 1;
+                    if seen.insert(ray.clone()) {
+                        q.push_back(ray.clone());
+                    }
+                    ray.dx = -1;
+                    if seen.insert(ray.clone()) {
+                        q.push_back(ray.clone());
+                    }
+                }
+            },
+            '/' => {
+                (ray.dx, ray.dy) = (-ray.dy, -ray.dx);
+                if seen.insert(ray.clone()) {
+                    q.push_back(ray.clone());
+                }
+            }
+            '\\' => {
+                (ray.dx, ray.dy) = (ray.dy, ray.dx);
+                if seen.insert(ray.clone()) {
+                    q.push_back(ray.clone());
+                }
+            }
+            x => panic!("found character {} in grid", x),
+        }
+    }
+
+    let mut energized: BTreeSet<(i32, i32)> = BTreeSet::new();
+    for ray in seen {
+        energized.insert((ray.x, ray.y));
+    }
+    energized.iter().count()
+}
+
+fn part_two(lines: &str) -> usize {
+    let grid = string_to_grid(lines);
+    let mut res = 0;
+    for x in 0..grid.len() {
+        res = res.max(energized_count(
+            &grid,
+            Ray {
+                x: x as i32,
+                y: -1,
+                dx: 0,
+                dy: 1,
+            },
+        ));
+        res = res.max(energized_count(
+            &grid,
+            Ray {
+                x: x as i32,
+                y: grid[0].len() as i32,
+                dx: 0,
+                dy: -1,
+            },
+        ))
+    }
+
+    for y in 0..grid.len() {
+        res = res.max(energized_count(
+            &grid,
+            Ray {
+                x: -1,
+                y: y as i32,
+                dx: 1,
+                dy: 0,
+            },
+        ));
+        res = res.max(energized_count(
+            &grid,
+            Ray {
+                x: grid.len() as i32,
+                y: y as i32,
+                dx: -1,
+                dy: 0,
+            },
+        ))
+    }
+    res
+}
+
 fn main() {
     let path = Path::new("input.txt");
     let display = path.display();
@@ -138,4 +263,5 @@ fn main() {
     }
 
     println!("{}", part_one(&lines));
+    println!("{}", part_two(&lines));
 }
