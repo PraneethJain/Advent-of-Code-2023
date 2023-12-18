@@ -102,6 +102,73 @@ fn part_one(lines: &str) -> i32 {
     panic!("couldn't find path to end");
 }
 
+fn part_two(lines: &str) -> i32 {
+    let grid = string_to_grid(lines);
+
+    let mut heap: BinaryHeap<Point> = BinaryHeap::new();
+    let mut seen: BTreeSet<(i32, i32, i32, i32, i32)> = BTreeSet::new();
+
+    heap.push(Point {
+        heat_loss: 0,
+        x: 0,
+        y: 0,
+        dx: 0,
+        dy: 0,
+        same_dir_count: 0,
+    });
+    let mut first = true;
+
+    while !heap.is_empty() {
+        let point = heap.pop().expect("heap is empty");
+
+        if point.x == grid.len() as i32 - 1 && point.y == grid[0].len() as i32 - 1 {
+            return -point.heat_loss;
+        }
+        if !seen.insert((point.x, point.y, point.dx, point.dy, point.same_dir_count)) {
+            continue;
+        }
+
+        // same direction
+        if point.same_dir_count < 10 || first {
+            first = false;
+            let x = point.x + point.dx;
+            let y = point.y + point.dy;
+            if x >= 0 && x < grid.len() as i32 && y >= 0 && y < grid[0].len() as i32 {
+                heap.push(Point {
+                    heat_loss: -(-point.heat_loss + grid[x as usize][y as usize]),
+                    x,
+                    y,
+                    dx: point.dx,
+                    dy: point.dy,
+                    same_dir_count: point.same_dir_count + 1,
+                })
+            }
+        }
+
+        // different direction
+        if point.same_dir_count < 4 && (point.dx, point.dy) != (0, 0) {
+            continue;
+        }
+        for (dx, dy) in [(0, 1), (1, 0), (0, -1), (-1, 0)] {
+            if (dx, dy) == (point.dx, point.dy) || (dx, dy) == (-point.dx, -point.dy) {
+                continue;
+            }
+            let x = point.x + dx;
+            let y = point.y + dy;
+            if x >= 0 && x < grid.len() as i32 && y >= 0 && y < grid[0].len() as i32 {
+                heap.push(Point {
+                    heat_loss: -(-point.heat_loss + grid[x as usize][y as usize]),
+                    x,
+                    y,
+                    dx,
+                    dy,
+                    same_dir_count: 1,
+                })
+            }
+        }
+    }
+    panic!("couldn't find path to end");
+}
 fn main() {
     let path = Path::new("input.txt");
     let display = path.display();
@@ -118,4 +185,5 @@ fn main() {
     }
 
     println!("{}", part_one(&lines));
+    println!("{}", part_two(&lines));
 }
