@@ -96,6 +96,100 @@ fn part_one(lines: &str) -> i32 {
         .sum()
 }
 
+fn combinations(
+    ranges: &BTreeMap<char, (i64, i64)>,
+    cur: &str,
+    workflows: &BTreeMap<&str, Workflow>,
+) -> i64 {
+    match cur {
+        "A" => ranges
+            .values()
+            .map(|&(start, end)| end - start + 1)
+            .product(),
+        "R" => 0,
+        cur => {
+            let workflow = workflows.get(&cur).unwrap();
+            let mut res = 0;
+            let mut remaining = ranges.clone();
+            for condition in &workflow.conditions {
+                let (start, end) = remaining.get(&condition.letter).unwrap().to_owned();
+                let (accepted_range, rejected_range) = match condition.comparison {
+                    '>' => (
+                        (condition.value as i64 + 1, end),
+                        (start, condition.value as i64),
+                    ),
+                    '<' => (
+                        (start, condition.value as i64 - 1),
+                        (condition.value as i64, end),
+                    ),
+                    c => panic!("found character {} in comparison", c),
+                };
+
+                if accepted_range.0 <= accepted_range.1 {
+                    let prev = remaining.get(&condition.letter).unwrap().to_owned();
+                    *remaining.get_mut(&condition.letter).unwrap() = accepted_range;
+                    res += combinations(&remaining, &condition.result, workflows);
+                    *remaining.get_mut(&condition.letter).unwrap() = prev;
+                }
+
+                if rejected_range.0 <= rejected_range.1 {
+                    *remaining.get_mut(&condition.letter).unwrap() = rejected_range;
+                }
+            }
+
+            res + combinations(&remaining, &workflow.fallback, workflows)
+        }
+    }
+}
+
+fn part_two(lines: &str) -> i64 {
+    let (workflow_lines, _) = lines
+        .split_once("\n\n")
+        .expect("no new empty line in input");
+
+    let workflows: BTreeMap<&str, Workflow> = workflow_lines
+        .lines()
+        .map(|line| {
+            let (name, condition_string) = line[..(line.len() - 1)]
+                .split_once('{')
+                .expect("no { in line");
+            let mut condition_strings: Vec<_> = condition_string.split(',').collect();
+            (
+                name,
+                Workflow {
+                    fallback: condition_strings
+                        .pop()
+                        .expect("no fallback found")
+                        .to_string(),
+                    conditions: condition_strings
+                        .iter()
+                        .map(|&cond| {
+                            let (l, r) = cond[2..].split_once(':').expect("no : in condition");
+                            Condition {
+                                letter: cond.chars().nth(0).expect("0th character"),
+                                comparison: cond.chars().nth(1).expect("1th character"),
+                                value: l.parse().unwrap(),
+                                result: r.to_string(),
+                            }
+                        })
+                        .collect(),
+                },
+            )
+        })
+        .collect();
+
+    combinations(
+        &BTreeMap::from([
+            ('x', (1, 4000)),
+            ('m', (1, 4000)),
+            ('a', (1, 4000)),
+            ('s', (1, 4000)),
+        ]),
+        "in",
+        &workflows,
+    )
+}
+
 fn main() {
     let path = Path::new("input.txt");
     let display = path.display();
@@ -112,4 +206,5 @@ fn main() {
     }
 
     println!("{}", part_one(&lines));
+    println!("{}", part_two(&lines));
 }
