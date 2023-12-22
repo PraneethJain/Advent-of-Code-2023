@@ -116,6 +116,39 @@ fn part_one(lines: &str) -> i32 {
         .sum()
 }
 
+fn part_two(lines: &str) -> i32 {
+    let mut bricks: Vec<_> = lines
+        .lines()
+        .map(|line| match line.split_once('~') {
+            Some((l, r)) => {
+                let start: Vec<usize> = l.trim().split(',').map(|x| x.parse().unwrap()).collect();
+                let end: Vec<usize> = r.trim().split(',').map(|x| x.parse().unwrap()).collect();
+                ((start[0], start[1], start[2]), (end[0], end[1], end[2]))
+            }
+            None => panic!("no ~ in line {}", line),
+        })
+        .collect();
+    bricks.sort_unstable_by_key(|brick| brick.0 .2.min(brick.1 .2));
+    let stabilized = stabilize(&bricks);
+
+    stabilized
+        .iter()
+        .map(|brick| {
+            let removed: Vec<_> = stabilized
+                .clone()
+                .iter()
+                .filter_map(|x| if x == brick { None } else { Some(x.to_owned()) })
+                .collect();
+
+            removed
+                .iter()
+                .zip(stabilize(&removed).iter())
+                .map(|(b1, b2)| if b1 == b2 { 0 } else { 1 })
+                .sum::<i32>()
+        })
+        .sum()
+}
+
 fn main() {
     let path = Path::new("input.txt");
     let display = path.display();
@@ -132,4 +165,5 @@ fn main() {
     }
 
     println!("{}", part_one(&lines));
+    println!("{}", part_two(&lines));
 }
