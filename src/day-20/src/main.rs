@@ -24,7 +24,7 @@ fn button_press(
         }
         match modules.get_mut(&cur) {
             Some(Module::FlipFlop(state, destinations)) => {
-                if strength == false {
+                if !strength {
                     *state = !*state;
                     for destination in destinations {
                         q.push_back((cur.to_string(), destination.to_string(), *state));
@@ -58,11 +58,11 @@ fn part_one(lines: &str) -> i32 {
             .map(|x| x.trim().to_string())
             .collect();
 
-        if source.starts_with('%') {
-            modules.insert(source[1..].to_string(), Module::FlipFlop(false, vec));
-        } else if source.starts_with('&') {
+        if let Some(stripped) = source.strip_prefix('%') {
+            modules.insert(stripped.to_string(), Module::FlipFlop(false, vec));
+        } else if let Some(stripped) = source.strip_prefix('&') {
             modules.insert(
-                source[1..].to_string(),
+                stripped.to_string(),
                 Module::Conjunction(BTreeMap::new(), vec),
             );
         } else if source == "broadcaster" {
@@ -81,14 +81,13 @@ fn part_one(lines: &str) -> i32 {
         };
 
         for destination in destinations {
-            match modules.get_mut(&destination) {
-                Some(module) => match module {
+            if let Some(module) = modules.get_mut(&destination) {
+                match module {
                     Module::FlipFlop(_, _) => (),
                     Module::Conjunction(state, _) => {
                         state.insert(x.to_string(), false);
                     }
-                },
-                None => (),
+                }
             }
         }
     }
@@ -113,10 +112,8 @@ fn button_press_till_rx(
         let (source, cur, strength) = q.pop_front().expect("queue is empty");
 
         // hardcoded from input
-        if cur == "lx" && strength {
-            if !cycles.contains_key(&source) {
-                cycles.insert(source.clone(), count);
-            }
+        if cur == "lx" && strength && !cycles.contains_key(&source) {
+            cycles.insert(source.clone(), count);
         }
         // hardcoded from input
         if cycles.len() == 4 {
@@ -125,7 +122,7 @@ fn button_press_till_rx(
 
         match modules.get_mut(&cur) {
             Some(Module::FlipFlop(state, destinations)) => {
-                if strength == false {
+                if !strength {
                     *state = !*state;
                     for destination in destinations {
                         q.push_back((cur.to_string(), destination.to_string(), *state));
@@ -159,11 +156,11 @@ fn part_two(lines: &str) -> i64 {
             .map(|x| x.trim().to_string())
             .collect();
 
-        if source.starts_with('%') {
-            modules.insert(source[1..].to_string(), Module::FlipFlop(false, vec));
-        } else if source.starts_with('&') {
+        if let Some(stripped) = source.strip_prefix('%') {
+            modules.insert(stripped.to_string(), Module::FlipFlop(false, vec));
+        } else if let Some(stripped) = source.strip_prefix('&') {
             modules.insert(
-                source[1..].to_string(),
+                stripped.to_string(),
                 Module::Conjunction(BTreeMap::new(), vec),
             );
         } else if source == "broadcaster" {
@@ -182,14 +179,13 @@ fn part_two(lines: &str) -> i64 {
         };
 
         for destination in destinations {
-            match modules.get_mut(&destination) {
-                Some(module) => match module {
+            if let Some(module) = modules.get_mut(&destination) {
+                match module {
                     Module::FlipFlop(_, _) => (),
                     Module::Conjunction(state, _) => {
                         state.insert(x.to_string(), false);
                     }
-                },
-                None => (),
+                }
             }
         }
     }
@@ -206,16 +202,13 @@ fn main() {
     let path = Path::new("input.txt");
     let display = path.display();
 
-    let mut file = match File::open(&path) {
+    let mut file = match File::open(path) {
         Err(why) => panic!("couldn't open {}: {}", display, why),
         Ok(file) => file,
     };
 
     let mut lines = String::new();
-    match file.read_to_string(&mut lines) {
-        Err(why) => panic!("couldn't read {}: {}", display, why),
-        _ => {}
-    }
+    file.read_to_string(&mut lines).expect("couldn't read file");
 
     println!("{}", part_one(&lines));
     println!("{}", part_two(&lines));
